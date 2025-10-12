@@ -4,7 +4,7 @@ Sistema de registro de viajes en tiempo real con geolocalización y códigos QR 
 
 ## 🚀 Acceso Rápido
 
-**URL de la App:** https://TU-USUARIO.github.io/control-pasajeros-mmasic
+**URL de la App:** https://tmasic25.github.io/control-pasajeros-mmasic
 
 ## 📱 Instalación en iPad
 
