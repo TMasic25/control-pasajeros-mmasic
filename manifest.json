@@ -1,0 +1,17 @@
+{
+  "name": "mmasic Control de Pasajeros",
+  "short_name": "mmasic Van",
+  "description": "Sistema de registro de pasajeros en tiempo real",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1089a0",
+  "theme_color": "#1089a0",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "logo-mmasic.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
