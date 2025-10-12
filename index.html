@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Pasajeros - mmasic</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1089a0">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1089a0 0%, #0d6e7e 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            border-radius: 20px 20px 0 0;
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .logo {
+            max-width: 280px;
+            width: 100%;
+            height: auto;
+            margin-bottom: 20px;
+        }
+        
+        .header h1 {
+            color: #1089a0;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        
+        .main-content {
+            background: white;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .message {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .message.success {
+            background: #d1fae5;
+            color: #065f46;
+            border-left: 4px solid #10b981;
+        }
+        
+        .message.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-left: 4px solid #ef4444;
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        button {
+            width: 100%;
+            padding: 18px;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-primary {
+            background: #1089a0;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #0d6e7e;
+        }
+        
+        .btn-success {
+            background: #16a34a;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #15803d;
+        }
+        
+        .btn-warning {
+            background: #ea580c;
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background: #c2410c;
+        }
+        
+        .btn-secondary {
+            background: #6b7280;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #4b5563;
+        }
+        
+        .btn-danger {
+            background: #dc2626;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #b91c1c;
+        }
+        
+        #video {
+            width: 100%;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            background: #000;
+        }
+        
+        .video-container {
+            position: relative;
+        }
+        
+        .scan-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 250px;
+            height: 250px;
+            border: 3px solid #fbbf24;
+            border-radius: 12px;
+            pointer-events: none;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        
+        .passenger-info {
+            background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 2px solid #1089a0;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        
+        .passenger-info h3 {
+            color: #1089a0;
+            margin-bottom: 15px;
+            font-size: 20px;
+        }
+        
+        .passenger-info p {
+            margin: 8px 0;
+            color: #374151;
+            font-size: 16px;
+        }
+        
+        .passenger-info strong {
+            color: #1f2937;
+        }
+        
+        .button-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .loader {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #1089a0;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .footer {
+            background: white;
+            border-radius: 0 0 20px 20px;
+            padding: 20px;
+            text-align: center;
+            color: #6b7280;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .footer p {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 10px;
+            }
+
+            .header, .main-content, .footer {
+                padding: 20px;
+            }
+
+            .logo {
+                max-width: 220px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            button {
+                padding: 16px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="logo-mmasic.png" alt="mmasic Transportes Turismo" class="logo">
+            <h1>🚐 Control de Pasajeros</h1>
+            <p>Sistema de registro de viajes</p>
+        </div>
+
+        <div class="main-content">
+            <!-- Message Area -->
+            <div id="messageArea"></div>
+
+            <!-- Scan Button -->
+            <div id="scanSection">
+                <button class="btn-primary" onclick="startCamera()">
+                    📷 Escanear Código QR
+                </button>
+            </div>
+
+            <!-- Video Section -->
+            <div id="videoSection" class="hidden">
+                <div class="video-container">
+                    <video id="video" autoplay playsinline></video>
+                    <div class="scan-overlay"></div>
+                </div>
+                <button class="btn-danger" onclick="stopCamera()">
+                    ❌ Cancelar Escaneo
+                </button>
+            </div>
+
+            <!-- Passenger Info Section -->
+            <div id="passengerSection" class="hidden">
+                <div class="passenger-info">
+                    <h3>👤 Datos del Pasajero</h3>
+                    <p><strong>Nombre:</strong> <span id="passengerName"></span></p>
+                    <p><strong>Empresa:</strong> <span id="passengerCompany"></span></p>
+                    <p><strong>Área:</strong> <span id="passengerArea"></span></p>
+                    <p id="locationInfo" class="hidden" style="color: #16a34a; margin-top: 15px; font-weight: bold;">
+                        📍 Ubicación capturada correctamente
+                    </p>
+                </div>
+
+                <div class="button-group">
+                    <button class="btn-success" onclick="registerTrip('start')">
+                        🚀 Inicio de Viaje
+                    </button>
+                    <button class="btn-warning" onclick="registerTrip('end')">
+                        🏁 Finalización
+                    </button>
+                </div>
+
+                <button class="btn-secondary" onclick="resetForm()">
+                    🔄 Nuevo Registro
+                </button>
+            </div>
+
+            <!-- Loading Section -->
+            <div id="loadingSection" class="hidden loader">
+                <div class="spinner"></div>
+                <p style="color: #374151; font-weight: bold;">Registrando viaje...</p>
+                <p style="color: #6b7280; font-size: 14px; margin-top: 10px;">Por favor espera</p>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p><strong>mmasic Transportes Turismo</strong></p>
+            <p>© 2025 Sistema de Control de Pasajeros</p>
+        </div>
+    </div>
+
+    <canvas id="canvas" class="hidden"></canvas>
+
+    <script>
+        // ⚠️ IMPORTANTE: REEMPLAZA ESTA URL CON TU URL DE GOOGLE APPS SCRIPT
+        const GOOGLE_SCRIPT_URL = 'TU_URL_DE_GOOGLE_APPS_SCRIPT_AQUI';
+
+        let stream = null;
+        let scanInterval = null;
+        let passengerData = null;
+        let currentLocation = null;
+
+        function showMessage(text, type) {
+            const messageArea = document.getElementById('messageArea');
+            messageArea.innerHTML = `
+                <div class="message ${type}">
+                    ${type === 'success' ? '✅' : '❌'} ${text}
+                </div>
+            `;
+            setTimeout(() => {
+                messageArea.innerHTML = '';
+            }, 5000);
+        }
+
+        async function startCamera() {
+            try {
+                // Verificar si estamos en HTTPS o localhost
+                if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                    showMessage('⚠️ Esta app debe usarse desde HTTPS (GitHub Pages). No funcionará abriendo el archivo directamente.', 'error');
+                    return;
+                }
+
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: { 
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                });
+                
+                const video = document.getElementById('video');
+                video.srcObject = stream;
+
+                document.getElementById('scanSection').classList.add('hidden');
+                document.getElementById('videoSection').classList.remove('hidden');
+
+                startScanning();
+            } catch (err) {
+                console.error('Error detallado:', err);
+                if (err.name === 'NotAllowedError') {
+                    showMessage('Permisos de cámara denegados. Ve a Ajustes > Safari > Cámara y permite el acceso.', 'error');
+                } else if (err.name === 'NotFoundError') {
+                    showMessage('No se encontró ninguna cámara en el dispositivo.', 'error');
+                } else if (err.name === 'NotSupportedError') {
+                    showMessage('Esta función requiere HTTPS. Sube la app a GitHub Pages.', 'error');
+                } else {
+                    showMessage('Error al acceder a la cámara: ' + err.message, 'error');
+                }
+            }
+        }
+
+        function stopCamera() {
+            if (scanInterval) {
+                clearInterval(scanInterval);
+                scanInterval = null;
+            }
+            
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+
+            const video = document.getElementById('video');
+            video.srcObject = null;
+
+            document.getElementById('videoSection').classList.add('hidden');
+            document.getElementById('scanSection').classList.remove('hidden');
+        }
+
+        function startScanning() {
+            scanInterval = setInterval(() => {
+                captureAndDecode();
+            }, 500);
+        }
+
+        function captureAndDecode() {
+            const video = document.getElementById('video');
+            const canvas = document.getElementById('canvas');
+            const context = canvas.getContext('2d');
+
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+                if (code) {
+                    processQRCode(code.data);
+                    stopCamera();
+                }
+            }
+        }
+
+        function processQRCode(data) {
+            try {
+                const parts = data.split('|');
+                if (parts.length !== 3) {
+                    showMessage('❌ Formato de QR inválido. Debe ser: NOMBRE|EMPRESA|AREA', 'error');
+                    return;
+                }
+
+                const [nombre, empresa, area] = parts.map(p => p.trim());
+                passengerData = { nombre, empresa, area };
+
+                document.getElementById('passengerName').textContent = nombre;
+                document.getElementById('passengerCompany').textContent = empresa;
+                document.getElementById('passengerArea').textContent = area;
+
+                document.getElementById('passengerSection').classList.remove('hidden');
+                showMessage('✅ QR escaneado correctamente. Selecciona el tipo de registro.', 'success');
+            } catch (err) {
+                showMessage('❌ Error al procesar el QR', 'error');
+                console.error(err);
+            }
+        }
+
+        async function getLocation() {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject(new Error('Geolocalización no disponible en este dispositivo'));
+                    return;
+                }
+
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        resolve({
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude,
+                            accuracy: position.coords.accuracy
+                        });
+                    },
+                    (error) => {
+                        let errorMsg = 'Error desconocido';
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                errorMsg = 'Permisos de ubicación denegados';
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                errorMsg = 'Ubicación no disponible';
+                                break;
+                            case error.TIMEOUT:
+                                errorMsg = 'Tiempo de espera agotado';
+                                break;
+                        }
+                        reject(new Error(errorMsg));
+                    },
+                    { 
+                        enableHighAccuracy: true, 
+                        timeout: 10000,
+                        maximumAge: 0
+                    }
+                );
+            });
+        }
+
+        async function registerTrip(type) {
+            if (!passengerData) {
+                showMessage('❌ Primero escanea un código QR', 'error');
+                return;
+            }
+
+            document.getElementById('passengerSection').classList.add('hidden');
+            document.getElementById('loadingSection').classList.remove('hidden');
+
+            try {
+                currentLocation = await getLocation();
+                document.getElementById('locationInfo').classList.remove('hidden');
+
+                const now = new Date();
+                const data = {
+                    fecha: now.toLocaleDateString('es-CL', { timeZone: 'America/Santiago' }),
+                    hora: now.toLocaleTimeString('es-CL', { timeZone: 'America/Santiago' }),
+                    nombre: passengerData.nombre,
+                    empresa: passengerData.empresa,
+                    area: passengerData.area,
+                    tipo: type === 'start' ? 'Inicio de viaje' : 'Finalización de viaje',
+                    latitud: currentLocation.lat,
+                    longitud: currentLocation.lng
+                };
+
+                console.log('Enviando datos:', data);
+
+                await fetch(GOOGLE_SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                showMessage(`✅ Registro exitoso: ${data.tipo}`, 'success');
+                
+                setTimeout(() => {
+                    resetForm();
+                }, 2000);
+
+            } catch (err) {
+                console.error('Error completo:', err);
+                showMessage('❌ Error: ' + err.message, 'error');
+                document.getElementById('passengerSection').classList.remove('hidden');
+            } finally {
+                document.getElementById('loadingSection').classList.add('hidden');
+            }
+        }
+
+        function resetForm() {
+            passengerData = null;
+            currentLocation = null;
+            document.getElementById('passengerSection').classList.add('hidden');
+            document.getElementById('locationInfo').classList.add('hidden');
+            document.getElementById('scanSection').classList.remove('hidden');
+        }
+
+        // Verificación al cargar la página
+        window.addEventListener('load', () => {
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                showMessage('⚠️ IMPORTANTE: Esta app debe usarse desde HTTPS (GitHub Pages) para acceder a la cámara y ubicación.', 'error');
+            }
+        });
+    </script>
+</body>
+</html>
