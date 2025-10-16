@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control de Pasajeros - Transportes Masic</title>
+    <title>Control de Pasajeros - mmasic</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1089a0">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -126,13 +126,29 @@
         .btn-primary:hover {
             background: #0d6e7e;
         }
+
+        .btn-sound {
+            background: #fbbf24;
+            color: #92400e;
+            margin-bottom: 20px;
+            animation: pulse-button 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-button {
+            0%, 100% {
+                box-shadow: 0 4px 6px rgba(251, 191, 36, 0.3);
+            }
+            50% {
+                box-shadow: 0 6px 12px rgba(251, 191, 36, 0.6);
+            }
+        }
         
         #video {
             width: 100%;
             border-radius: 12px;
             margin-bottom: 15px;
             background: #000;
-            transform: scaleX(-1); /* Espejo para cámara frontal */
+            transform: scaleX(-1);
         }
         
         .video-container {
@@ -260,6 +276,31 @@
             color: #374151;
         }
 
+        .sound-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(16, 137, 160, 0.9);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 1000;
+            animation: slideInRight 0.3s ease-out;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
         @media (max-width: 640px) {
             body {
                 padding: 10px;
@@ -287,7 +328,7 @@
 <body>
     <div class="container">
         <div class="header">
-            <img src="logo-mmasic.png" alt="Transportes Masic" class="logo">
+            <img src="logo-mmasic.png" alt="mmasic Transportes Turismo" class="logo">
             <h1>🚐 Control de Pasajeros</h1>
             <p>Sistema automático de registro</p>
         </div>
@@ -296,7 +337,17 @@
             <!-- Message Area -->
             <div id="messageArea"></div>
 
-            <!-- Video Section (siempre visible cuando está escaneando) -->
+            <!-- Botón para activar sonido (solo aparece al inicio) -->
+            <div id="soundActivation" class="hidden">
+                <button class="btn-sound" onclick="activateSound()">
+                    🔊 Activar Sonido y Comenzar
+                </button>
+                <p style="text-align: center; color: #6b7280; font-size: 14px; margin-top: 10px;">
+                    Toca el botón para habilitar las alertas sonoras
+                </p>
+            </div>
+
+            <!-- Video Section -->
             <div id="videoSection" class="hidden">
                 <div class="video-container">
                     <video id="video" autoplay playsinline></video>
@@ -307,7 +358,7 @@
                 </div>
             </div>
 
-            <!-- Passenger Info Section (mostrar 3 segundos) -->
+            <!-- Passenger Info Section -->
             <div id="passengerSection" class="hidden">
                 <div class="passenger-info">
                     <h3 id="statusIcon">✅</h3>
@@ -330,7 +381,7 @@
         </div>
 
         <div class="footer">
-            <p><strong>Transportes Masic</strong></p>
+            <p><strong>mmasic Transportes Turismo</strong></p>
             <p>© 2025 Sistema de Control de Pasajeros</p>
         </div>
     </div>
@@ -338,57 +389,101 @@
     <canvas id="canvas" class="hidden"></canvas>
 
     <script>
-        // ⚠️ IMPORTANTE: REEMPLAZA ESTA URL CON TU URL DE GOOGLE APPS SCRIPT
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx4hmwVqi41WV-bSx1YYjOJgcvF1Yrq_GpUpCFJLesXQfY3Fgqe-X9PgXXDsKQwyiDj/exec';
+        const GOOGLE_SCRIPT_URL = 'TU_URL_DE_GOOGLE_APPS_SCRIPT_AQUI';
 
         let stream = null;
         let scanInterval = null;
         let audioContext = null;
-        let isProcessing = false; // Evitar múltiples escaneos simultáneos
+        let isProcessing = false;
+        let soundEnabled = false;
 
-        // Inicializar Audio Context
         function initAudio() {
             if (!audioContext) {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
             }
+            // Reanudar contexto si está suspendido
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
         }
 
-        // Sonido de éxito (beep corto)
         function playSuccessSound() {
-            initAudio();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
+            if (!soundEnabled || !audioContext) return;
             
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            oscillator.frequency.value = 800; // Tono alto
-            oscillator.type = 'sine';
-            
-            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
-            
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.15);
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 880;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+                
+                console.log('🔊 Sonido de éxito reproducido');
+                showSoundIndicator('✅ Beep');
+            } catch (err) {
+                console.error('Error reproduciendo sonido de éxito:', err);
+            }
         }
 
-        // Sonido de error (tono bajo)
         function playErrorSound() {
+            if (!soundEnabled || !audioContext) return;
+            
+            try {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 200;
+                oscillator.type = 'sawtooth';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.4);
+                
+                console.log('🔊 Sonido de error reproducido');
+                showSoundIndicator('❌ Error');
+            } catch (err) {
+                console.error('Error reproduciendo sonido de error:', err);
+            }
+        }
+
+        function showSoundIndicator(text) {
+            const indicator = document.createElement('div');
+            indicator.className = 'sound-indicator';
+            indicator.textContent = text;
+            document.body.appendChild(indicator);
+            
+            setTimeout(() => {
+                indicator.remove();
+            }, 1000);
+        }
+
+        function activateSound() {
+            console.log('🔊 Activando sonido...');
             initAudio();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
+            soundEnabled = true;
             
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
+            // Reproducir sonido de prueba
+            playSuccessSound();
             
-            oscillator.frequency.value = 200; // Tono bajo
-            oscillator.type = 'sawtooth';
+            document.getElementById('soundActivation').classList.add('hidden');
+            showMessage('🔊 Sonido activado correctamente', 'success');
             
-            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
-            
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.3);
+            setTimeout(() => {
+                startCamera();
+            }, 500);
         }
 
         function showMessage(text, type) {
@@ -405,10 +500,9 @@
 
         async function startCamera() {
             try {
-                // Cámara frontal (user) en lugar de trasera (environment)
                 stream = await navigator.mediaDevices.getUserMedia({
                     video: { 
-                        facingMode: 'user', // CÁMARA FRONTAL
+                        facingMode: 'user',
                         width: { ideal: 1280 },
                         height: { ideal: 720 }
                     }
@@ -461,7 +555,6 @@
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
                 
-                // Invertir horizontalmente para compensar el efecto espejo
                 context.save();
                 context.scale(-1, 1);
                 context.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
@@ -481,7 +574,6 @@
             console.log('QR detectado:', data);
             
             try {
-                // Formato esperado: ID|NOMBRE|EMPRESA|AREA
                 const parts = data.split('|');
                 
                 if (parts.length !== 4) {
@@ -493,7 +585,6 @@
 
                 const [id, nombre, empresa, area] = parts.map(p => p.trim());
                 
-                // Validar que no estén vacíos
                 if (!id || !nombre || !empresa || !area) {
                     playErrorSound();
                     showMessage('❌ QR inválido: Todos los campos son obligatorios', 'error');
@@ -501,7 +592,6 @@
                     return;
                 }
 
-                // QR válido
                 playSuccessSound();
                 stopCamera();
                 
@@ -568,21 +658,11 @@
             document.getElementById('loadingSection').classList.remove('hidden');
 
             try {
-                // PASO 1: Obtener ubicación
                 console.log('📍 Obteniendo ubicación...');
                 const location = await getLocation();
                 console.log('✅ Ubicación:', location);
 
-                // PASO 2: Consultar tipo de viaje (Inicio o Fin)
-                console.log('🔍 Consultando historial...');
-                showMessage('🔍 Verificando historial de viajes...', 'info');
-                
                 const now = new Date();
-                const tripType = await checkTripType(passengerData.id);
-                
-                console.log('📊 Tipo de viaje:', tripType);
-
-                // PASO 3: Preparar datos
                 const data = {
                     id: passengerData.id,
                     timestamp: now.toISOString(),
@@ -591,14 +671,13 @@
                     nombre: passengerData.nombre,
                     empresa: passengerData.empresa,
                     area: passengerData.area,
-                    tipo: tripType,
+                    tipo: 'AUTO',
                     latitud: location.lat,
                     longitud: location.lng
                 };
 
                 console.log('📤 Enviando datos:', data);
 
-                // PASO 4: Enviar a Google Sheets
                 await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -610,7 +689,6 @@
 
                 console.log('✅ Registro completado');
 
-                // PASO 5: Mostrar confirmación
                 document.getElementById('loadingSection').classList.add('hidden');
                 document.getElementById('passengerSection').classList.remove('hidden');
                 
@@ -619,18 +697,12 @@
                 document.getElementById('passengerArea').textContent = passengerData.area;
                 
                 const badge = document.getElementById('tripTypebadge');
-                if (tripType === 'Inicio de viaje') {
-                    badge.textContent = '🚀 ' + tripType;
-                    badge.className = 'type-badge inicio';
-                } else {
-                    badge.textContent = '🏁 ' + tripType;
-                    badge.className = 'type-badge fin';
-                }
+                badge.textContent = '✅ Viaje Registrado';
+                badge.className = 'type-badge inicio';
 
                 playSuccessSound();
-                showMessage(`✅ ${tripType} registrado exitosamente`, 'success');
+                showMessage(`✅ Viaje registrado exitosamente`, 'success');
 
-                // PASO 6: Volver a escanear después de 3 segundos
                 setTimeout(() => {
                     resetAndRescan();
                 }, 3000);
@@ -642,28 +714,9 @@
                 
                 document.getElementById('loadingSection').classList.add('hidden');
                 
-                // Reintentar después de 3 segundos
                 setTimeout(() => {
                     resetAndRescan();
                 }, 3000);
-            }
-        }
-
-        async function checkTripType(passengerId) {
-            try {
-                // Consultar al servidor qué tipo de viaje debe ser
-                const response = await fetch(GOOGLE_SCRIPT_URL + '?action=checkTrip&id=' + passengerId, {
-                    method: 'GET'
-                });
-                
-                // Como usamos no-cors, no podemos leer la respuesta
-                // El servidor decidirá basándose en el historial
-                // Retornamos un placeholder que el servidor manejará
-                return 'AUTO'; // El servidor decidirá si es Inicio o Finalización
-                
-            } catch (err) {
-                console.error('Error al verificar tipo de viaje:', err);
-                return 'Inicio de viaje'; // Por defecto, inicio
             }
         }
 
@@ -673,24 +726,18 @@
             startCamera();
         }
 
-        // Iniciar cámara automáticamente al cargar
         window.addEventListener('load', () => {
             console.log('🚀 Iniciando aplicación...');
             
-            // Verificar HTTPS
             if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
                 showMessage('⚠️ Esta app requiere HTTPS para funcionar correctamente', 'error');
             } else {
-                // Iniciar cámara automáticamente
-                setTimeout(() => {
-                    startCamera();
-                }, 500);
+                document.getElementById('soundActivation').classList.remove('hidden');
             }
         });
 
-        // Reiniciar si la página pierde foco y vuelve
         document.addEventListener('visibilitychange', () => {
-            if (!document.hidden && !stream) {
+            if (!document.hidden && !stream && soundEnabled) {
                 startCamera();
             }
         });
