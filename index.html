@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Control de Pasajeros - Masic</title>
+    <title>Control de Pasajeros - mmasic</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#1089a0">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -54,6 +54,7 @@
             background: white;
             padding: 30px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            min-height: 400px;
         }
         
         .message {
@@ -64,6 +65,8 @@
             align-items: center;
             gap: 10px;
             animation: slideIn 0.3s ease-out;
+            font-size: 16px;
+            font-weight: 500;
         }
 
         @keyframes slideIn {
@@ -87,6 +90,12 @@
             background: #fee2e2;
             color: #991b1b;
             border-left: 4px solid #ef4444;
+        }
+
+        .message.info {
+            background: #dbeafe;
+            color: #1e40af;
+            border-left: 4px solid #3b82f6;
         }
         
         .hidden {
@@ -118,47 +127,12 @@
             background: #0d6e7e;
         }
         
-        .btn-success {
-            background: #16a34a;
-            color: white;
-        }
-        
-        .btn-success:hover {
-            background: #15803d;
-        }
-        
-        .btn-warning {
-            background: #ea580c;
-            color: white;
-        }
-        
-        .btn-warning:hover {
-            background: #c2410c;
-        }
-        
-        .btn-secondary {
-            background: #6b7280;
-            color: white;
-        }
-
-        .btn-secondary:hover {
-            background: #4b5563;
-        }
-        
-        .btn-danger {
-            background: #dc2626;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #b91c1c;
-        }
-        
         #video {
             width: 100%;
             border-radius: 12px;
             margin-bottom: 15px;
             background: #000;
+            transform: scaleX(-1); /* Espejo para cámara frontal */
         }
         
         .video-container {
@@ -181,19 +155,22 @@
         @keyframes pulse {
             0%, 100% {
                 opacity: 1;
+                box-shadow: 0 0 20px rgba(251, 191, 36, 0.5);
             }
             50% {
-                opacity: 0.5;
+                opacity: 0.7;
+                box-shadow: 0 0 40px rgba(251, 191, 36, 0.8);
             }
         }
         
         .passenger-info {
             background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%);
-            padding: 25px;
+            padding: 30px;
             border-radius: 12px;
             margin-bottom: 20px;
             border: 2px solid #1089a0;
             animation: fadeIn 0.5s ease-out;
+            text-align: center;
         }
 
         @keyframes fadeIn {
@@ -209,25 +186,37 @@
         
         .passenger-info h3 {
             color: #1089a0;
-            margin-bottom: 15px;
-            font-size: 20px;
+            margin-bottom: 20px;
+            font-size: 24px;
         }
         
         .passenger-info p {
-            margin: 8px 0;
+            margin: 12px 0;
             color: #374151;
-            font-size: 16px;
+            font-size: 18px;
         }
         
         .passenger-info strong {
             color: #1f2937;
         }
-        
-        .button-group {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 15px;
+
+        .passenger-info .type-badge {
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            margin-top: 15px;
+        }
+
+        .type-badge.inicio {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .type-badge.fin {
+            background: #fed7aa;
+            color: #9a3412;
         }
         
         .loader {
@@ -264,6 +253,13 @@
             font-size: 14px;
         }
 
+        .scan-status {
+            text-align: center;
+            padding: 20px;
+            font-size: 18px;
+            color: #374151;
+        }
+
         @media (max-width: 640px) {
             body {
                 padding: 10px;
@@ -291,69 +287,50 @@
 <body>
     <div class="container">
         <div class="header">
-            <img src="logo-mmasic.png" alt="Transportes Masic" class="logo">
+            <img src="logo-mmasic.png" alt="mmasic Transportes Turismo" class="logo">
             <h1>🚐 Control de Pasajeros</h1>
-            <p>Sistema de registro de viajes</p>
+            <p>Sistema automático de registro</p>
         </div>
 
         <div class="main-content">
             <!-- Message Area -->
             <div id="messageArea"></div>
 
-            <!-- Scan Button -->
-            <div id="scanSection">
-                <button class="btn-primary" onclick="startCamera()">
-                    📷 Escanear Código QR
-                </button>
-            </div>
-
-            <!-- Video Section -->
+            <!-- Video Section (siempre visible cuando está escaneando) -->
             <div id="videoSection" class="hidden">
                 <div class="video-container">
                     <video id="video" autoplay playsinline></video>
                     <div class="scan-overlay"></div>
                 </div>
-                <button class="btn-danger" onclick="stopCamera()">
-                    ❌ Cancelar Escaneo
-                </button>
+                <div class="scan-status">
+                    <p>📱 Presenta el código QR frente a la cámara</p>
+                </div>
             </div>
 
-            <!-- Passenger Info Section -->
+            <!-- Passenger Info Section (mostrar 3 segundos) -->
             <div id="passengerSection" class="hidden">
                 <div class="passenger-info">
-                    <h3>👤 Datos del Pasajero</h3>
-                    <p><strong>Nombre:</strong> <span id="passengerName"></span></p>
+                    <h3 id="statusIcon">✅</h3>
+                    <div id="tripTypebadge" class="type-badge"></div>
+                    <p style="font-size: 24px; font-weight: bold; margin-top: 20px;" id="passengerName"></p>
                     <p><strong>Empresa:</strong> <span id="passengerCompany"></span></p>
                     <p><strong>Área:</strong> <span id="passengerArea"></span></p>
-                    <p id="locationInfo" class="hidden" style="color: #16a34a; margin-top: 15px; font-weight: bold;">
-                        📍 Ubicación capturada correctamente
+                    <p id="locationInfo" style="color: #16a34a; margin-top: 15px; font-weight: bold;">
+                        📍 Ubicación registrada
                     </p>
                 </div>
-
-                <div class="button-group">
-                    <button class="btn-success" onclick="registerTrip('start')">
-                        🚀 Inicio de Viaje
-                    </button>
-                    <button class="btn-warning" onclick="registerTrip('end')">
-                        🏁 Finalización
-                    </button>
-                </div>
-
-                <button class="btn-secondary" onclick="resetForm()">
-                    🔄 Nuevo Registro
-                </button>
             </div>
 
             <!-- Loading Section -->
             <div id="loadingSection" class="hidden loader">
                 <div class="spinner"></div>
-                <p style="color: #374151; font-weight: bold;">Registrando viaje...</p>
-                <p style="color: #6b7280; font-size: 14px; margin-top: 10px;">Por favor espera</p>
+                <p style="color: #374151; font-weight: bold;">Procesando...</p>
+                <p style="color: #6b7280; font-size: 14px; margin-top: 10px;">Obteniendo ubicación y registrando</p>
             </div>
         </div>
 
         <div class="footer">
-            <p><strong>Transportes Masic</strong></p>
+            <p><strong>mmasic Transportes Turismo</strong></p>
             <p>© 2025 Sistema de Control de Pasajeros</p>
         </div>
     </div>
@@ -362,18 +339,63 @@
 
     <script>
         // ⚠️ IMPORTANTE: REEMPLAZA ESTA URL CON TU URL DE GOOGLE APPS SCRIPT
-        const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxcN2Pm0PVr5KIO3TazQrLBaUssteiZhUgTRztbWialZdoryjSjrZQdH_YfT3w8Sa7d/exec';
+        const GOOGLE_SCRIPT_URL = 'TU_URL_DE_GOOGLE_APPS_SCRIPT_AQUI';
 
         let stream = null;
         let scanInterval = null;
-        let passengerData = null;
-        let currentLocation = null;
+        let audioContext = null;
+        let isProcessing = false; // Evitar múltiples escaneos simultáneos
+
+        // Inicializar Audio Context
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        // Sonido de éxito (beep corto)
+        function playSuccessSound() {
+            initAudio();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 800; // Tono alto
+            oscillator.type = 'sine';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.15);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.15);
+        }
+
+        // Sonido de error (tono bajo)
+        function playErrorSound() {
+            initAudio();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = 200; // Tono bajo
+            oscillator.type = 'sawtooth';
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.3);
+        }
 
         function showMessage(text, type) {
             const messageArea = document.getElementById('messageArea');
             messageArea.innerHTML = `
                 <div class="message ${type}">
-                    ${type === 'success' ? '✅' : '❌'} ${text}
+                    ${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'} ${text}
                 </div>
             `;
             setTimeout(() => {
@@ -383,15 +405,10 @@
 
         async function startCamera() {
             try {
-                // Verificar si estamos en HTTPS o localhost
-                if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
-                    showMessage('⚠️ Esta app debe usarse desde HTTPS (GitHub Pages). No funcionará abriendo el archivo directamente.', 'error');
-                    return;
-                }
-
+                // Cámara frontal (user) en lugar de trasera (environment)
                 stream = await navigator.mediaDevices.getUserMedia({
                     video: { 
-                        facingMode: 'environment',
+                        facingMode: 'user', // CÁMARA FRONTAL
                         width: { ideal: 1280 },
                         height: { ideal: 720 }
                     }
@@ -400,21 +417,13 @@
                 const video = document.getElementById('video');
                 video.srcObject = stream;
 
-                document.getElementById('scanSection').classList.add('hidden');
                 document.getElementById('videoSection').classList.remove('hidden');
-
                 startScanning();
+                
             } catch (err) {
-                console.error('Error detallado:', err);
-                if (err.name === 'NotAllowedError') {
-                    showMessage('Permisos de cámara denegados. Ve a Ajustes > Safari > Cámara y permite el acceso.', 'error');
-                } else if (err.name === 'NotFoundError') {
-                    showMessage('No se encontró ninguna cámara en el dispositivo.', 'error');
-                } else if (err.name === 'NotSupportedError') {
-                    showMessage('Esta función requiere HTTPS. Sube la app a GitHub Pages.', 'error');
-                } else {
-                    showMessage('Error al acceder a la cámara: ' + err.message, 'error');
-                }
+                console.error('Error al acceder a la cámara:', err);
+                playErrorSound();
+                showMessage('❌ Error al acceder a la cámara. Verifica los permisos.', 'error');
             }
         }
 
@@ -433,12 +442,13 @@
             video.srcObject = null;
 
             document.getElementById('videoSection').classList.add('hidden');
-            document.getElementById('scanSection').classList.remove('hidden');
         }
 
         function startScanning() {
             scanInterval = setInterval(() => {
-                captureAndDecode();
+                if (!isProcessing) {
+                    captureAndDecode();
+                }
             }, 500);
         }
 
@@ -450,37 +460,58 @@
             if (video.readyState === video.HAVE_ENOUGH_DATA) {
                 canvas.width = video.videoWidth;
                 canvas.height = video.videoHeight;
-                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                // Invertir horizontalmente para compensar el efecto espejo
+                context.save();
+                context.scale(-1, 1);
+                context.drawImage(video, -canvas.width, 0, canvas.width, canvas.height);
+                context.restore();
 
                 const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
                 const code = jsQR(imageData.data, imageData.width, imageData.height);
 
                 if (code) {
+                    isProcessing = true;
                     processQRCode(code.data);
-                    stopCamera();
                 }
             }
         }
 
         function processQRCode(data) {
+            console.log('QR detectado:', data);
+            
             try {
+                // Formato esperado: ID|NOMBRE|EMPRESA|AREA
                 const parts = data.split('|');
-                if (parts.length !== 3) {
-                    showMessage('❌ Formato de QR inválido. Debe ser: NOMBRE|EMPRESA|AREA', 'error');
+                
+                if (parts.length !== 4) {
+                    playErrorSound();
+                    showMessage('❌ QR inválido: Formato incorrecto. Debe ser: ID|NOMBRE|EMPRESA|AREA', 'error');
+                    isProcessing = false;
                     return;
                 }
 
-                const [nombre, empresa, area] = parts.map(p => p.trim());
-                passengerData = { nombre, empresa, area };
+                const [id, nombre, empresa, area] = parts.map(p => p.trim());
+                
+                // Validar que no estén vacíos
+                if (!id || !nombre || !empresa || !area) {
+                    playErrorSound();
+                    showMessage('❌ QR inválido: Todos los campos son obligatorios', 'error');
+                    isProcessing = false;
+                    return;
+                }
 
-                document.getElementById('passengerName').textContent = nombre;
-                document.getElementById('passengerCompany').textContent = empresa;
-                document.getElementById('passengerArea').textContent = area;
-
-                document.getElementById('passengerSection').classList.remove('hidden');
-                showMessage('✅ QR escaneado correctamente. Selecciona el tipo de registro.', 'success');
+                // QR válido
+                playSuccessSound();
+                stopCamera();
+                
+                const passengerData = { id, nombre, empresa, area };
+                registerTripAutomatic(passengerData);
+                
             } catch (err) {
-                showMessage('❌ Error al procesar el QR', 'error');
+                playErrorSound();
+                showMessage('❌ Error al procesar el QR: ' + err.message, 'error');
+                isProcessing = false;
                 console.error(err);
             }
         }
@@ -488,12 +519,21 @@
         async function getLocation() {
             return new Promise((resolve, reject) => {
                 if (!navigator.geolocation) {
-                    reject(new Error('Geolocalización no disponible en este dispositivo'));
+                    reject(new Error('Geolocalización no disponible'));
                     return;
                 }
 
+                console.log('🔍 Obteniendo ubicación...');
+
+                const options = {
+                    enableHighAccuracy: true,
+                    timeout: 20000,
+                    maximumAge: 0
+                };
+
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
+                        console.log('✅ Ubicación obtenida');
                         resolve({
                             lat: position.coords.latitude,
                             lng: position.coords.longitude,
@@ -501,56 +541,64 @@
                         });
                     },
                     (error) => {
-                        let errorMsg = 'Error desconocido';
+                        console.error('❌ Error de ubicación:', error);
+                        let errorMsg = 'Error al obtener ubicación';
+                        
                         switch(error.code) {
-                            case error.PERMISSION_DENIED:
+                            case 1:
                                 errorMsg = 'Permisos de ubicación denegados';
                                 break;
-                            case error.POSITION_UNAVAILABLE:
+                            case 2:
                                 errorMsg = 'Ubicación no disponible';
                                 break;
-                            case error.TIMEOUT:
+                            case 3:
                                 errorMsg = 'Tiempo de espera agotado';
                                 break;
                         }
+                        
                         reject(new Error(errorMsg));
                     },
-                    { 
-                        enableHighAccuracy: true, 
-                        timeout: 10000,
-                        maximumAge: 0
-                    }
+                    options
                 );
             });
         }
 
-        async function registerTrip(type) {
-            if (!passengerData) {
-                showMessage('❌ Primero escanea un código QR', 'error');
-                return;
-            }
-
-            document.getElementById('passengerSection').classList.add('hidden');
+        async function registerTripAutomatic(passengerData) {
+            document.getElementById('videoSection').classList.add('hidden');
             document.getElementById('loadingSection').classList.remove('hidden');
 
             try {
-                currentLocation = await getLocation();
-                document.getElementById('locationInfo').classList.remove('hidden');
+                // PASO 1: Obtener ubicación
+                console.log('📍 Obteniendo ubicación...');
+                const location = await getLocation();
+                console.log('✅ Ubicación:', location);
 
+                // PASO 2: Consultar tipo de viaje (Inicio o Fin)
+                console.log('🔍 Consultando historial...');
+                showMessage('🔍 Verificando historial de viajes...', 'info');
+                
                 const now = new Date();
+                const tripType = await checkTripType(passengerData.id);
+                
+                console.log('📊 Tipo de viaje:', tripType);
+
+                // PASO 3: Preparar datos
                 const data = {
+                    id: passengerData.id,
+                    timestamp: now.toISOString(),
                     fecha: now.toLocaleDateString('es-CL', { timeZone: 'America/Santiago' }),
                     hora: now.toLocaleTimeString('es-CL', { timeZone: 'America/Santiago' }),
                     nombre: passengerData.nombre,
                     empresa: passengerData.empresa,
                     area: passengerData.area,
-                    tipo: type === 'start' ? 'Inicio de viaje' : 'Finalización de viaje',
-                    latitud: currentLocation.lat,
-                    longitud: currentLocation.lng
+                    tipo: tripType,
+                    latitud: location.lat,
+                    longitud: location.lng
                 };
 
-                console.log('Enviando datos:', data);
+                console.log('📤 Enviando datos:', data);
 
+                // PASO 4: Enviar a Google Sheets
                 await fetch(GOOGLE_SCRIPT_URL, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -560,33 +608,90 @@
                     body: JSON.stringify(data)
                 });
 
-                showMessage(`✅ Registro exitoso: ${data.tipo}`, 'success');
+                console.log('✅ Registro completado');
+
+                // PASO 5: Mostrar confirmación
+                document.getElementById('loadingSection').classList.add('hidden');
+                document.getElementById('passengerSection').classList.remove('hidden');
                 
+                document.getElementById('passengerName').textContent = passengerData.nombre;
+                document.getElementById('passengerCompany').textContent = passengerData.empresa;
+                document.getElementById('passengerArea').textContent = passengerData.area;
+                
+                const badge = document.getElementById('tripTypebadge');
+                if (tripType === 'Inicio de viaje') {
+                    badge.textContent = '🚀 ' + tripType;
+                    badge.className = 'type-badge inicio';
+                } else {
+                    badge.textContent = '🏁 ' + tripType;
+                    badge.className = 'type-badge fin';
+                }
+
+                playSuccessSound();
+                showMessage(`✅ ${tripType} registrado exitosamente`, 'success');
+
+                // PASO 6: Volver a escanear después de 3 segundos
                 setTimeout(() => {
-                    resetForm();
-                }, 2000);
+                    resetAndRescan();
+                }, 3000);
 
             } catch (err) {
-                console.error('Error completo:', err);
-                showMessage('❌ Error: ' + err.message, 'error');
-                document.getElementById('passengerSection').classList.remove('hidden');
-            } finally {
+                console.error('❌ ERROR:', err);
+                playErrorSound();
+                showMessage('❌ ' + err.message, 'error');
+                
                 document.getElementById('loadingSection').classList.add('hidden');
+                
+                // Reintentar después de 3 segundos
+                setTimeout(() => {
+                    resetAndRescan();
+                }, 3000);
             }
         }
 
-        function resetForm() {
-            passengerData = null;
-            currentLocation = null;
-            document.getElementById('passengerSection').classList.add('hidden');
-            document.getElementById('locationInfo').classList.add('hidden');
-            document.getElementById('scanSection').classList.remove('hidden');
+        async function checkTripType(passengerId) {
+            try {
+                // Consultar al servidor qué tipo de viaje debe ser
+                const response = await fetch(GOOGLE_SCRIPT_URL + '?action=checkTrip&id=' + passengerId, {
+                    method: 'GET'
+                });
+                
+                // Como usamos no-cors, no podemos leer la respuesta
+                // El servidor decidirá basándose en el historial
+                // Retornamos un placeholder que el servidor manejará
+                return 'AUTO'; // El servidor decidirá si es Inicio o Finalización
+                
+            } catch (err) {
+                console.error('Error al verificar tipo de viaje:', err);
+                return 'Inicio de viaje'; // Por defecto, inicio
+            }
         }
 
-        // Verificación al cargar la página
+        function resetAndRescan() {
+            document.getElementById('passengerSection').classList.add('hidden');
+            isProcessing = false;
+            startCamera();
+        }
+
+        // Iniciar cámara automáticamente al cargar
         window.addEventListener('load', () => {
-            if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-                showMessage('⚠️ IMPORTANTE: Esta app debe usarse desde HTTPS (GitHub Pages) para acceder a la cámara y ubicación.', 'error');
+            console.log('🚀 Iniciando aplicación...');
+            
+            // Verificar HTTPS
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                showMessage('⚠️ Esta app requiere HTTPS para funcionar correctamente', 'error');
+            } else {
+                // Iniciar cámara automáticamente
+                setTimeout(() => {
+                    startCamera();
+                }, 500);
+            }
+        });
+
+        // Reiniciar si la página pierde foco y vuelve
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden && !stream) {
+                startCamera();
             }
         });
     </script>
